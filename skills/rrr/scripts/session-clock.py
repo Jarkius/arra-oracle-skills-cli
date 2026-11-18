@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Session clock — the Claude Code adapter. One implementation, not the mechanism.
+"""Session clock - the Claude Code adapter. One implementation, not the mechanism.
 
 Satisfies the SessionClock contract in ../HOSTS.md for hosts that store
 newline-delimited transcripts with ISO `"timestamp":"..."` fields. Codex and other
@@ -25,14 +25,20 @@ import datetime as dt
 import glob
 import json
 import os
+import re
 import sys
 
 TS_KEY = '"timestamp":"'
 
 
 def find_transcript(cwd: str) -> str | None:
-    """Locate the newest transcript for this working directory."""
-    encoded = "-" + cwd.lstrip("/").replace("/", "-").replace(".", "-")
+    """Locate the newest transcript for this working directory.
+
+    Claude Code names the folder by replacing every non-alphanumeric character
+    of the cwd with "-": /Users/a/x.y -> -Users-a-x-y, and on Windows
+    C:<backslash>Work<backslash>x -> C--Work-x.
+    """
+    encoded = re.sub(r"[^A-Za-z0-9]", "-", cwd)
     base = os.path.join(os.path.expanduser("~/.claude/projects"), encoded)
     files = sorted(glob.glob(os.path.join(base, "*.jsonl")), key=os.path.getmtime, reverse=True)
     return files[0] if files else None
@@ -42,7 +48,7 @@ def read_timestamps(path: str) -> list[str]:
     """Substring-scan for timestamps. Never json.loads a whole line: the bodies
     are the expensive part and we do not want them."""
     out = []
-    with open(path, "r", errors="replace") as fh:
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
         for line in fh:
             i = line.find(TS_KEY)
             if i >= 0:
@@ -93,10 +99,10 @@ def main() -> int:
     for seg in chosen:
         start, end = seg[0], seg[-1]
         mins = int((end - start).total_seconds() // 60)
-        print(f"\nsegment {start:%Y-%m-%d} {start:%H:%M}–{end:%H:%M} {label}  ({mins} min, {len(seg)} events)")
+        print(f"\nsegment {start:%Y-%m-%d} {start:%H:%M}-{end:%H:%M} {label}  ({mins} min, {len(seg)} events)")
         beats = sorted({s.strftime("%H:%M") for s in seg})
         shown = beats[: args.beats]
-        print("  beats: " + " ".join(shown) + (f"  …+{len(beats) - len(shown)} more" if len(beats) > len(shown) else ""))
+        print("  beats: " + " ".join(shown) + (f"  ...+{len(beats) - len(shown)} more" if len(beats) > len(shown) else ""))
     return 0
 
 

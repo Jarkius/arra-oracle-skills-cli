@@ -107,8 +107,13 @@ every `date` call and git timestamp below renders in GMT+7 regardless of the hos
 local zone:
 
 ```bash
-export TZ='Asia/Bangkok'   # GMT+7 — retro timeline, header, and path stamps
+export TZ='ICT-7'   # GMT+7 — retro timeline, header, and path stamps
+date +%Z            # must print ICT; GMT/UTC means TZ was ignored — stop and fix
 ```
+
+Use the POSIX form `ICT-7` (sign is inverted: `-7` means UTC+7), not `Asia/Bangkok`.
+A zone name needs tz data, and Git Bash on Windows ships none, so `Asia/Bangkok`
+silently falls back to GMT and every stamp comes out 7 hours early.
 
 Use the smallest commands that accurately describe this session:
 
@@ -152,7 +157,7 @@ mining — a `--fg` retro may and should use them to build a real timeline.
 ### 2. Resolve artifact paths
 
 ```bash
-# TZ='Asia/Bangkok' (GMT+7) was exported in step 1, so these stamps are Bangkok-local.
+# TZ='ICT-7' (GMT+7) was exported in step 1, so these stamps are Bangkok-local.
 DATE_PATH=$(date +%Y-%m/%d)
 TODAY=$(date +%Y-%m-%d)
 HHMM=$(date +%H.%M)
